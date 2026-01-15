@@ -1,0 +1,5 @@
+com/tournament/management/service/PlayerServiceTest.class
+com/tournament/management/service/StandingsServiceTest.class
+com/tournament/management/service/TournamentServiceTest.class
+com/tournament/management/service/ResultServiceTest.class
+com/tournament/management/service/MatchServiceTest.class
