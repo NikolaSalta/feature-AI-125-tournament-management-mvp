@@ -72,6 +72,10 @@ class TournamentController {
       return res.status(400).json({ error: 'gameId, player1Id, and player2Id are required' });
     }
 
+    if (player1Id === player2Id) {
+      return res.status(400).json({ error: 'A player cannot play against themselves' });
+    }
+
     const tournament = tournaments.get(tournamentId);
     if (!tournament) {
       return res.status(404).json({ error: 'Tournament not found' });

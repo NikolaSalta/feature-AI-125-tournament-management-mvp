@@ -74,6 +74,19 @@ describe('Tournament Management API', () => {
       expect(response.body.game.player2Id).toBe('player4');
     });
 
+    it('should return 400 if player tries to play against themselves', async () => {
+      const response = await request(app)
+        .post(`/api/tournaments/${tournamentId}/games`)
+        .send({
+          gameId: 'game-self',
+          player1Id: 'player3',
+          player2Id: 'player3'
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('A player cannot play against themselves');
+    });
+
     it('should update game result with win (1)', async () => {
       const response = await request(app)
         .patch(`/api/tournaments/${tournamentId}/games`)
