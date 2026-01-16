@@ -5,6 +5,7 @@ import com.chessai.tournament.security.jwt.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -132,6 +133,7 @@ public class SecurityConfig {
 
     @Configuration
     @Profile({"prod", "default", "test"})  // Активируется для production, default или test профиля
+    @Order(2) // Lower priority than OAuth2SecurityConfig
     public static class ProductionSecurityConfig {
 
         private final JwtAuthenticationFilter jwtAuthenticationFilter;
@@ -154,6 +156,8 @@ public class SecurityConfig {
         @Bean
         public SecurityFilterChain productionSecurityFilterChain(HttpSecurity http) throws Exception {
             http
+                // Apply to API endpoints only (exclude OAuth2 endpoints)
+                .securityMatcher("/api/**", "/actuator/**", "/swagger-ui/**", "/v3/api-docs/**")
                 // CORS
                 .cors(cors -> cors.configurationSource(corsConfigurationSource))
                 
