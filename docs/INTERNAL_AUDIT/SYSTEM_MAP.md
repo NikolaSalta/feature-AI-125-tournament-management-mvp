@@ -1,271 +1,200 @@
 # System Map — Tournament Service Backend
 
-## Date: 2026-01-15
-## Auditor: Cursor AI (Principal Backend Engineer + SRE + Security Reviewer)
-
----
-
 ## Service Overview
-
-| Property | Value |
-|----------|-------|
-| **Name** | tournament-service-be |
-| **Port** | 8080 |
-| **Profiles** | dev / prod / vault |
-| **Database** | PostgreSQL (port 5432) |
-| **Cache** | Caffeine (in-memory) |
-| **Framework** | Spring Boot 3.5.9 |
-| **Java Version** | 17 |
-| **Build Tool** | Gradle |
-| **Migration** | Flyway |
-| **Auth** | JWT (Spring Security) |
-| **API Docs** | OpenAPI 3.0 / Swagger UI |
+- **Name**: tournament-service-be
+- **Port**: 8080
+- **Profiles**: dev / prod / test / vault
+- **Database**: PostgreSQL (port 5432)
+- **Cache**: Caffeine (in-memory)
+- **Authentication**: JWT-based
+- **API Version**: v1
+- **Framework**: Spring Boot 3.3.6 + Spring Cloud 2023.0.5
 
 ---
 
-## Architecture
+## 🏗 Architecture Overview
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   API Client    │    │  Mobile App     │    │   Web Client    │
+│                 │    │                 │    │                 │
+│      JWT        │    │      JWT        │    │      JWT        │
+└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
+          │                      │                      │
+          ▼                      ▼                      ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                Tournament Service Backend                        │
+├─────────────────────────────────────────────────────────────────┤
+│  Controllers → Services → Repositories → PostgreSQL            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 📊 Entities & Database Schema
+
+| Entity | Table | Description | Key Relationships |
+|--------|-------|-------------|-------------------|
+| **Tournament** | `tournaments` | Шахматный турнир | 1:N → TournamentPlayer, Game, TournamentWinner |
+| **TournamentPlayer** | `tournament_players` | Участник турнира | N:1 → Tournament, User |
+| **Game** | `games` | Партия/матч | N:1 → Tournament, TournamentPlayer (white/black) |
+| **TournamentWinner** | `tournament_winners` | Победитель (multiple) | N:1 → Tournament, TournamentPlayer |
+| **User** | `users` | Пользователь системы | 1:N → TournamentPlayer |
+
+### Entity Status Enums:
+- **TournamentStatus**: `DRAFT`, `REGISTRATION_OPEN`, `IN_PROGRESS`, `COMPLETED`, `CANCELLED`
+- **TournamentFormat**: `SWISS`, `ROUND_ROBIN`, `KNOCKOUT`, `ARENA`
+- **PlayerStatus**: `REGISTERED`, `ACTIVE`, `WITHDRAWN`, `DISQUALIFIED`
+- **GameStatus**: `SCHEDULED`, `IN_PROGRESS`, `FINISHED`, `CANCELLED`
+- **Role**: `USER`, `ORGANIZER`, `ADMIN`
+
+---
+
+## 🛣 API Endpoints
+
+### Authentication (`/api/v1/auth`)
+| Method | Path | Description | Auth Required |
+|--------|------|-------------|---------------|
+| POST | `/register` | Регистрация пользователя | ❌ |
+| POST | `/login` | Вход в систему | ❌ |
+| POST | `/refresh` | Обновление токена | ❌ |
+| GET | `/me` | Профиль пользователя | ✅ JWT |
+| GET | `/validate` | Валидация токена | ✅ JWT |
+
+### Tournaments (`/api/v1/tournaments`)
+| Method | Path | Description | Auth Required |
+|--------|------|-------------|---------------|
+| GET | `/` | Список турниров | ❌ (public) |
+| POST | `/` | Создание турнира | ✅ ORGANIZER+ |
+| GET | `/{id}` | Детали турнира | ❌ (public) |
+| PUT | `/{id}` | Обновление турнира | ✅ ORGANIZER |
+| DELETE | `/{id}` | Удаление турнира | ✅ ORGANIZER |
+
+### Tournament Players (`/api/v1/tournaments/{id}/players`)
+| Method | Path | Description | Auth Required |
+|--------|------|-------------|---------------|
+| GET | `/` | Список участников | ❌ (public) |
+| POST | `/` | Регистрация в турнир | ✅ USER+ |
+| GET | `/{playerId}` | Детали участника | ❌ (public) |
+| DELETE | `/{playerId}` | Снятие с турнира | ✅ USER (self) / ORGANIZER |
+| PATCH | `/{playerId}/disqualify` | Дисквалификация | ✅ ORGANIZER |
+
+### Games (`/api/v1/tournaments/{id}/games`)
+| Method | Path | Description | Auth Required |
+|--------|------|-------------|---------------|
+| GET | `/` | Список партий | ❌ (public) |
+| POST | `/` | Создание партии | ✅ ORGANIZER |
+| PATCH | `/{gameId}/result` | Ввод результата | ✅ ORGANIZER |
+| GET | `/standings` | Турнирная таблица | ❌ (public) |
+| POST | `/complete` | Завершение турнира | ✅ ORGANIZER |
+| POST | `/winners` | Добавление победителя | ✅ ORGANIZER |
+| POST | `/winners/all` | Все как победители | ✅ ORGANIZER |
+| GET | `/winners` | Список победителей | ❌ (public) |
+| DELETE | `/winners/{winnerId}` | Удаление победителя | ✅ ORGANIZER |
+
+---
+
+## 🔧 Technical Dependencies
+
+### Runtime Dependencies
+- **PostgreSQL 16+** (required, port 5432)
+- **Flyway** (database migrations)
+- **JWT** (authentication tokens)
+- **Caffeine** (in-memory caching)
+- **Bucket4j** (rate limiting)
+
+### Optional Dependencies
+- **HashiCorp Vault** (secrets management, port 8200)
+- **Docker** (containerization)
+- **Kubernetes** (orchestration)
+
+### Development Dependencies
+- **H2 Database** (in-memory testing)
+- **JUnit 5** (testing framework)
+- **Mockito** (mocking)
+- **AssertJ** (assertions)
+- **Spring Boot Test** (integration testing)
+
+---
+
+## 🏷 Tier Classification
+
+| Tier | Service | Criticality | Dependencies |
+|------|---------|-------------|--------------|
+| **Tier-1** | Tournament Management | CRITICAL | PostgreSQL, JWT |
+| **Tier-2** | User Management | HIGH | PostgreSQL |
+| **Tier-3** | Authentication | HIGH | JWT, Rate Limiting |
+| **Tier-4** | Documentation | MEDIUM | Swagger UI |
+| **Tier-5** | Monitoring | LOW | Actuator |
+
+---
+
+## 📁 Project Structure
 
 ```
 src/main/java/com/chessai/tournament/
-├── config/                 # Spring configurations
-│   ├── ApiVersion.java     # API versioning constants
-│   ├── OpenApiConfig.java  # Swagger/OpenAPI config
-│   ├── SecurityConfig.java # Spring Security config
-│   └── VaultConfig.java    # HashiCorp Vault integration
-│
-├── controller/             # REST API controllers
-│   ├── AuthController.java           # /api/v1/auth/*
-│   ├── GameController.java           # /api/tournaments/{id}/games/*
-│   ├── TournamentController.java     # /api/tournaments/*
-│   └── TournamentPlayerController.java # /api/tournaments/{id}/players/*
-│
-├── service/                # Business logic
-│   ├── GameService.java
-│   ├── TournamentPlayerService.java
-│   └── TournamentService.java
-│
-├── repository/             # JPA repositories
-│   ├── GameRepository.java
-│   ├── TournamentPlayerRepository.java
-│   ├── TournamentRepository.java
-│   ├── TournamentWinnerRepository.java
-│   └── UserRepository.java
-│
-├── entity/                 # JPA entities
-│   ├── Game.java
-│   ├── Role.java (enum)
-│   ├── Tournament.java
-│   ├── TournamentFormat.java (enum)
-│   ├── TournamentPlayer.java
-│   ├── TournamentStatus.java (enum)
-│   ├── TournamentWinner.java
-│   └── User.java
-│
-├── dto/                    # Request/Response DTOs
-│   ├── auth/               # Auth DTOs
-│   ├── GameRequest.java
-│   ├── GameResponse.java
-│   ├── GameResultRequest.java
-│   ├── StandingsResponse.java
-│   ├── TournamentPlayerRequest.java
-│   ├── TournamentPlayerResponse.java
-│   ├── TournamentRequest.java
-│   ├── TournamentResponse.java
-│   ├── WinnerRequest.java
-│   └── WinnerResponse.java
-│
-├── security/               # Security components
-│   ├── jwt/                # JWT authentication
-│   │   ├── JwtAuthenticationEntryPoint.java
-│   │   ├── JwtAuthenticationFilter.java
-│   │   ├── JwtTokenProvider.java
-│   │   └── RefreshTokenService.java
-│   ├── ratelimit/          # Rate limiting
-│   │   ├── RateLimitingFilter.java
-│   │   └── RateLimitingService.java
-│   └── service/            # Auth services
-│       ├── AuthService.java
-│       └── CustomUserDetailsService.java
-│
-├── exception/              # Custom exceptions
-│   ├── AuthException.java
+├── config/                    # Spring configurations
+│   ├── ApiVersion.java        # API versioning
+│   ├── OpenApiConfig.java     # Swagger/OpenAPI setup
+│   ├── SecurityConfig.java    # Spring Security + JWT
+│   └── VaultConfig.java       # HashiCorp Vault integration
+├── controller/                # REST API controllers
+│   ├── AuthController.java    # Authentication endpoints
+│   ├── GameController.java    # Game management
+│   ├── TournamentController.java
+│   └── TournamentPlayerController.java
+├── dto/                       # Data Transfer Objects
+│   ├── auth/                  # Authentication DTOs
+│   └── *.java                 # Request/Response DTOs
+├── entity/                    # JPA entities
+│   ├── Tournament.java        # Core tournament entity
+│   ├── TournamentPlayer.java  # Tournament participants
+│   ├── Game.java              # Chess games/matches
+│   ├── TournamentWinner.java  # Tournament winners
+│   ├── User.java              # System users
+│   └── *.java                 # Enums (Status, Format, Role)
+├── exception/                 # Custom exceptions
 │   ├── GlobalExceptionHandler.java
-│   ├── TournamentNotEditableException.java
-│   └── TournamentNotFoundException.java
-│
-└── TournamentServiceBeApplication.java  # Main class
+│   └── *.java                 # Domain exceptions
+├── repository/                # JPA repositories
+│   └── *.java                 # Data access layer
+├── security/                  # Security components
+│   ├── jwt/                   # JWT implementation
+│   ├── ratelimit/             # Rate limiting
+│   └── service/               # Security services
+├── service/                   # Business logic
+│   ├── GameService.java       # Game management
+│   ├── TournamentService.java # Tournament management
+│   └── TournamentPlayerService.java
+└── TournamentServiceBeApplication.java
 ```
 
 ---
 
-## Entities
+## 🔍 Key Configuration Files
 
-| Entity | Table | Description |
-|--------|-------|-------------|
-| `Tournament` | `tournaments` | Шахматный турнир с lifecycle (DRAFT → REGISTRATION_OPEN → IN_PROGRESS → COMPLETED) |
-| `TournamentPlayer` | `tournament_players` | Участник турнира с очками и статусом |
-| `Game` | `games` | Партия/матч между двумя игроками |
-| `TournamentWinner` | `tournament_winners` | Победитель турнира (поддержка нескольких) |
-| `User` | `users` | Пользователь системы (auth) |
-
----
-
-## API Endpoints
-
-### Authentication (`/api/v1/auth`)
-
-| Method | Path | Description | Auth |
-|--------|------|-------------|------|
-| POST | `/register` | Регистрация нового пользователя | ❌ |
-| POST | `/login` | Вход в систему | ❌ |
-| POST | `/refresh` | Обновление токенов | ❌ |
-| GET | `/validate` | Валидация токена | ❌ |
-| GET | `/me` | Текущий пользователь | ✅ |
-| POST | `/logout` | Выход из системы | ✅ |
-
-### Tournaments (`/api/tournaments`)
-
-| Method | Path | Description | Auth |
-|--------|------|-------------|------|
-| GET | `/` | Список турниров | ✅ |
-| POST | `/` | Создать турнир | ✅ |
-| GET | `/{id}` | Получить турнир | ✅ |
-| PUT | `/{id}` | Обновить турнир | ✅ (organizer) |
-| DELETE | `/{id}` | Удалить турнир | ✅ (organizer) |
-| PATCH | `/{id}/status` | Изменить статус | ✅ (organizer) |
-
-### Tournament Players (`/api/tournaments/{id}/players`)
-
-| Method | Path | Description | Auth |
-|--------|------|-------------|------|
-| GET | `/` | Список участников | ✅ |
-| POST | `/` | Зарегистрировать участника | ✅ |
-| GET | `/{playerId}` | Получить участника | ✅ |
-| DELETE | `/{playerId}` | Снять участника | ✅ |
-| PATCH | `/{playerId}/disqualify` | Дисквалифицировать | ✅ (organizer) |
-
-### Games (`/api/tournaments/{id}/games`)
-
-| Method | Path | Description | Auth |
-|--------|------|-------------|------|
-| GET | `/` | Список партий | ✅ |
-| POST | `/` | Создать партию | ✅ (organizer) |
-| DELETE | `/{gameId}` | Удалить партию | ✅ (organizer) |
-| PATCH | `/{gameId}/result` | Установить результат | ✅ (organizer) |
-| GET | `/standings` | Турнирная таблица | ✅ |
-| POST | `/complete` | Завершить турнир | ✅ (organizer) |
-| GET | `/winners` | Список победителей | ✅ |
-| POST | `/winners` | Добавить победителя | ✅ (organizer) |
-| POST | `/winners/all` | Все участники - победители | ✅ (organizer) |
-| DELETE | `/winners/{winnerId}` | Удалить победителя | ✅ (organizer) |
+| File | Purpose | Environment |
+|------|---------|-------------|
+| `application.yml` | Base configuration | All |
+| `application-dev.yml` | Development overrides | dev |
+| `application-prod.yml` | Production overrides | prod |
+| `application-vault.yml` | Vault integration | vault |
+| `bootstrap.yml` | Vault bootstrap | vault |
+| `docker-compose.yml` | Local infrastructure | dev |
+| `Dockerfile` | Container build | prod |
 
 ---
 
-## Database Migrations (Flyway)
+## 🚀 Deployment Targets
 
-| Version | Description |
-|---------|-------------|
-| V1 | Initial schema setup |
-| V2 | Create users table |
-| V3 | Create tournaments table |
-| V4 | Add version to tournaments (optimistic locking) |
-| V5 | Add composite indexes |
-| V6 | Create tournament_players table |
-| V7 | Create games table |
-| V8 | Add winner_id to tournaments |
-| V9 | Create tournament_winners table |
+| Environment | Configuration | Database | Secrets |
+|-------------|---------------|----------|---------|
+| **Development** | dev profile | Docker PostgreSQL | .env files |
+| **Testing** | test profile | H2 in-memory | Hardcoded |
+| **Staging** | prod profile | External PostgreSQL | Vault |
+| **Production** | prod profile | External PostgreSQL | Vault |
 
 ---
 
-## Dependencies
-
-| Dependency | Purpose | Required |
-|------------|---------|----------|
-| PostgreSQL 15+ | Primary database | ✅ Required |
-| Flyway | Database migrations | ✅ Required |
-| JWT | Authentication | ✅ Required |
-| Caffeine | In-memory cache | ✅ Built-in |
-| HashiCorp Vault | Secrets management | ⚠️ Optional (prod) |
-
----
-
-## Configuration Files
-
-| File | Purpose |
-|------|---------|
-| `application.yml` | Base configuration |
-| `application-dev.yml` | Development profile |
-| `application-prod.yml` | Production profile |
-| `application-vault.yml` | Vault integration |
-| `bootstrap.yml` | Bootstrap config (Vault) |
-
----
-
-## Infrastructure
-
-| Component | File |
-|-----------|------|
-| Docker | `Dockerfile` |
-| Docker Compose | `docker-compose.yml` |
-| Kubernetes | `k8s/*.yaml` |
-
----
-
-## Test Structure
-
-```
-src/test/java/com/chessai/tournament/
-├── config/                           # Test configurations
-│   ├── TestSecurityConfig.java
-│   └── WebMvcTestSecurityConfig.java
-├── controller/                       # Integration tests
-│   ├── AuthControllerIntegrationTest.java
-│   ├── GameControllerIntegrationTest.java
-│   └── TournamentPlayerControllerIntegrationTest.java
-├── entity/                           # Validation tests
-│   └── EntityValidationTest.java
-├── repository/                       # Repository tests
-│   ├── GameRepositoryTest.java
-│   ├── TournamentPlayerRepositoryTest.java
-│   └── TournamentRepositoryTest.java
-├── security/                         # Security tests
-│   ├── jwt/JwtTokenProviderTest.java
-│   └── service/AuthServiceTest.java
-├── service/                          # Unit tests
-│   ├── GameServiceTest.java
-│   ├── TournamentPlayerServiceTest.java
-│   └── TournamentServiceTest.java
-└── TournamentServiceBeApplicationTests.java
-```
-
----
-
-## Tier Classification
-
-- **Tier-1**: Core tournament management (critical path)
-- **SLA**: 99.9% availability (target)
-- **RTO**: < 1 hour
-- **RPO**: < 5 minutes
-
----
-
-## Security Features
-
-- JWT-based authentication
-- Role-based access control (USER, ORGANIZER, ADMIN)
-- Rate limiting (Caffeine-based)
-- CORS configuration
-- Password encryption (BCrypt)
-- Refresh token rotation
-
----
-
-## Monitoring Endpoints
-
-| Endpoint | Description |
-|----------|-------------|
-| `/actuator/health` | Health check |
-| `/actuator/info` | Application info |
-| `/actuator/metrics` | Metrics (admin only) |
-| `/swagger-ui.html` | API documentation |
-| `/v3/api-docs` | OpenAPI spec |
+*Generated by Internal Audit System*  
+*Date: 2026-01-16*

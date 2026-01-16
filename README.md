@@ -229,7 +229,7 @@ export $(cat .env | xargs)
 
 # Или сборка и запуск JAR
 ./gradlew build
-java -jar build/libs/tournament-service-be-0.0.1-SNAPSHOT.jar
+java -jar build/libs/tournament-service-be-1.0.0-MVP.jar
 ```
 
 ### 6. Проверка работы:
@@ -360,7 +360,7 @@ Get-Content .env | ForEach-Object {
 
 # Или сборка и запуск JAR
 .\gradlew.bat build
-java -jar build\libs\tournament-service-be-0.0.1-SNAPSHOT.jar
+java -jar build\libs\tournament-service-be-1.0.0-MVP.jar
 ```
 
 ### 6. Проверка работы:
@@ -476,7 +476,7 @@ export $(cat .env | xargs)
 
 # Или сборка и запуск JAR
 ./gradlew build
-java -jar build/libs/tournament-service-be-0.0.1-SNAPSHOT.jar
+java -jar build/libs/tournament-service-be-1.0.0-MVP.jar
 ```
 
 ### 6. Проверка работы:
@@ -498,8 +498,6 @@ firefox http://localhost:8080/swagger-ui.html
 ### 1. Создание docker-compose.yml:
 
 ```yaml
-version: '3.8'
-
 services:
   postgres:
     image: postgres:16-alpine
@@ -933,7 +931,7 @@ MIT License - см. [LICENSE](LICENSE) файл
 ### Docker Deployment Status
 
 ```
-✅ PostgreSQL:        Healthy (port 5433)
+✅ PostgreSQL:        Healthy (port 5432, mapped to 5433 in Docker)
 ✅ Tournament Service: Healthy (port 8080)
 ✅ Health endpoint:    {"status":"UP"}
 ✅ Swagger UI:         http://localhost:8080/swagger-ui/index.html
