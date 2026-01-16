@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '3.3.6'
     id 'io.spring.dependency-management' version '1.1.7'
     id 'idea'
+    id 'jacoco'
 }
 
 group = 'com.chessai'
@@ -150,4 +151,40 @@ tasks.named('bootJar') {
  */
 springBoot {
     buildInfo()
+}
+
+/**
+ * ===== JaCoCo Code Coverage =====
+ */
+jacoco {
+    toolVersion = "0.8.11"
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+    
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+        
+        html.outputLocation = layout.buildDirectory.dir('reports/jacoco/html')
+        xml.outputLocation = layout.buildDirectory.file('reports/jacoco/test/jacocoTestReport.xml')
+    }
+    
+    // Исключения из покрытия (verification временно отключен)
+    // finalizedBy tasks.named('jacocoTestCoverageVerification')
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+    enabled = false // Временно отключено
+    // dependsOn tasks.named('jacocoTestReport')
+    // 
+    // violationRules {
+    //     rule {
+    //         limit {
+    //             minimum = 0.80 // Минимум 80% покрытия
+    //         }
+    //     }
+    // }
 }
