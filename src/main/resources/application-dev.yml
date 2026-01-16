@@ -39,20 +39,6 @@ logging:
 jwt:
   secret: ZGV2LW9ubHktc2VjcmV0LWtleS1mb3ItbG9jYWwtdGVzdGluZy0yNTZiaXRz
 
-# =====================================================
-# GitHub OAuth2 Development Configuration
-# =====================================================
-# For development, you can use test values or create a GitHub OAuth App
-# Register at: https://github.com/settings/developers
-spring:
-  security:
-    oauth2:
-      client:
-        registration:
-          github:
-            client-id: ${GITHUB_CLIENT_ID:dev-client-id}
-            client-secret: ${GITHUB_CLIENT_SECRET:dev-client-secret}
-
 # Actuator - открыты все endpoints для отладки
 management:
   endpoints:

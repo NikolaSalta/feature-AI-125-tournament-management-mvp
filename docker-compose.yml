@@ -29,7 +29,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - tournament-network
+      - tournament-network 
 
   # ========================================
   # Tournament Service Backend
