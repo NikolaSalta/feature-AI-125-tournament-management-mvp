@@ -1,0 +1,99 @@
+version: '3.8'
+
+# ========================================
+# Загрузка переменных из .env файла
+# ========================================
+# Создайте .env файл на основе .env.example:
+#   cp .env.example .env
+# Затем заполните реальными значениями
+# ========================================
+
+services:
+  # ========================================
+  # PostgreSQL Database
+  # ========================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: tournament-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-tournament_db}
+      POSTGRES_USER: ${DB_USERNAME:-tournament_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-tournament_user} -d ${DB_NAME:-tournament_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - tournament-network
+
+  # ========================================
+  # Tournament Service Backend
+  # ========================================
+  tournament-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tournament-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      # Database (override для docker network)
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-tournament_db}
+      DB_USERNAME: ${DB_USERNAME:-tournament_user}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      # Spring
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${DB_NAME:-tournament_db}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-tournament_user}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      # JWT (из .env файла)
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION:-1800000}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION:-604800000}
+      # JVM
+      JAVA_OPTS: ${JAVA_OPTS:--Xmx512m -Xms256m}
+    ports:
+      - "${SERVER_PORT:-8080}:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    networks:
+      - tournament-network
+
+  # ========================================
+  # HashiCorp Vault (optional, for secrets)
+  # ========================================
+  vault:
+    image: hashicorp/vault:1.15
+    container_name: tournament-vault
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: dev-root-token
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - tournament-network
+    profiles:
+      - vault  # Запускается только с --profile vault
+
+networks:
+  tournament-network:
+    driver: bridge
+
+volumes:
+  postgres_data:

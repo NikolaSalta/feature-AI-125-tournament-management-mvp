@@ -1,0 +1,53 @@
+# =====================
+# Development Profile Configuration
+# =====================
+# Активируется с: --spring.profiles.active=dev или SPRING_PROFILES_ACTIVE=dev
+#
+# ⚠️ DEV ONLY - This secret is for local development only!
+# NEVER use this secret in production!
+
+spring:
+  jpa:
+    show-sql: true
+  cloud:
+    compatibility-verifier:
+      enabled: false
+  
+  # Flyway с seed data для dev
+  flyway:
+    # Добавляем seed каталог к locations
+    locations: classpath:db/migration,classpath:db/seed
+    # Placeholder для условной загрузки seed data
+    placeholders:
+      seedData: "true"
+
+# Более подробное логирование в dev
+logging:
+  level:
+    root: INFO
+    com.chessai.tournament: DEBUG
+    com.chessai.tournament.security: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+
+# =====================
+# JWT - Development Secret
+# =====================
+# ⚠️ WARNING: This is a DEVELOPMENT-ONLY secret!
+# This value is publicly known and must NEVER be used in production.
+# Generate production secret: openssl rand -base64 32
+jwt:
+  secret: ZGV2LW9ubHktc2VjcmV0LWtleS1mb3ItbG9jYWwtdGVzdGluZy0yNTZiaXRz
+
+# Actuator - открыты все endpoints для отладки
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
+
+

@@ -1,0 +1,31 @@
+# =====================
+# HashiCorp Vault Profile Configuration
+# =====================
+# Активируется с: --spring.profiles.active=vault,dev или vault,prod
+#
+# Этот профиль включает интеграцию с HashiCorp Vault для централизованного
+# управления секретами. Vault должен быть запущен и настроен перед использованием.
+#
+# ВАЖНО: Основная конфигурация Vault находится в bootstrap.yml
+# Этот файл содержит только переопределения для профиля vault.
+
+spring:
+  cloud:
+    vault:
+      # Включить Vault для этого профиля
+      enabled: true
+      
+      # Fail Fast - остановить запуск при ошибке подключения к Vault
+      fail-fast: true
+
+# =====================
+# Логирование для отладки Vault
+# =====================
+logging:
+  level:
+    org.springframework.cloud.vault: DEBUG
+    org.springframework.vault: DEBUG
+    com.chessai.tournament.config.VaultConfig: DEBUG
+
+
+

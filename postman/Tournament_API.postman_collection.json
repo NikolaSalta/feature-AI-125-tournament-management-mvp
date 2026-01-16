@@ -1,0 +1,360 @@
+{
+  "info": {
+    "name": "Tournament Service API",
+    "description": "REST API для управления шахматными турнирами",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "tournament-service"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"testuser\",\n  \"email\": \"test@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"fullName\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usernameOrEmail\": \"testuser\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{access_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/v1/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "auth", "me"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Tournaments",
+      "item": [
+        {
+          "name": "Create Tournament",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "1"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Чемпионат мира 2026\",\n  \"description\": \"Международный турнир для игроков с рейтингом 2000+\",\n  \"format\": \"SWISS\",\n  \"startDate\": \"2026-06-01T10:00:00\",\n  \"endDate\": \"2026-06-10T18:00:00\",\n  \"maxParticipants\": 64,\n  \"timeControlMinutes\": 15,\n  \"timeIncrementSeconds\": 10,\n  \"minRating\": 2000,\n  \"maxRating\": 2800,\n  \"prizePool\": 10000,\n  \"entryFee\": 50,\n  \"isPublic\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tournaments",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tournaments"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Tournaments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tournaments?page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tournaments"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tournament by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tournaments/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tournaments", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Public Tournaments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tournaments/public?page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tournaments", "public"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Upcoming Tournaments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tournaments/upcoming?page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tournaments", "upcoming"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tournaments by Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tournaments/status/DRAFT?page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tournaments", "status", "DRAFT"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Tournaments by Organizer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tournaments/organizer/1?page=0&size=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tournaments", "organizer", "1"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Tournament",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "X-User-Id",
+                "value": "1"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Чемпионат мира 2026 (Updated)\",\n  \"description\": \"Обновленное описание турнира\",\n  \"format\": \"SWISS\",\n  \"startDate\": \"2026-06-01T10:00:00\",\n  \"endDate\": \"2026-06-10T18:00:00\",\n  \"maxParticipants\": 128,\n  \"timeControlMinutes\": 15,\n  \"timeIncrementSeconds\": 10,\n  \"minRating\": 2000,\n  \"maxRating\": 2800,\n  \"prizePool\": 15000,\n  \"entryFee\": 75,\n  \"isPublic\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tournaments/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tournaments", "1"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Tournament Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "1"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tournaments/1/status?status=REGISTRATION_OPEN",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tournaments", "1", "status"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "REGISTRATION_OPEN"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Tournament",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "X-User-Id",
+                "value": "1"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/tournaments/1",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tournaments", "1"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/actuator/health",
+          "host": ["{{base_url}}"],
+          "path": ["actuator", "health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Swagger UI",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/swagger-ui.html",
+          "host": ["{{base_url}}"],
+          "path": ["swagger-ui.html"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "OpenAPI Docs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/v3/api-docs",
+          "host": ["{{base_url}}"],
+          "path": ["v3", "api-docs"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
+
+
+
+
+

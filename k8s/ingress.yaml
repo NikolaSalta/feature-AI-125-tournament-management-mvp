@@ -1,0 +1,41 @@
+# -----------------------------------------------------------------------------
+# Ingress for Tournament Service
+# -----------------------------------------------------------------------------
+# Опционально - раскомментируйте и настройте при необходимости
+# -----------------------------------------------------------------------------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tournament-service
+  namespace: chessverse-tournament
+  labels:
+    app.kubernetes.io/name: tournament-service
+    app.kubernetes.io/part-of: chessverse
+  annotations:
+    # Nginx Ingress Controller
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "60"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "60"
+    # Rate Limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    # CORS (если нужно)
+    # nginx.ingress.kubernetes.io/enable-cors: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: tournament-api.chessverse.local  # Измените на ваш домен
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tournament-service
+                port:
+                  name: http
+  # TLS (раскомментируйте для HTTPS)
+  # tls:
+  #   - hosts:
+  #       - tournament-api.chessverse.local
+  #     secretName: tournament-tls
+

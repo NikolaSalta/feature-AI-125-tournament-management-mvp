@@ -1,0 +1,213 @@
+# Tournament Service Backend - Cursor AI Rules
+
+## Project Overview
+This is a Spring Boot 3.5.9 chess tournament management backend service.
+- Language: Java 17
+- Build: Gradle
+- Database: PostgreSQL with Flyway migrations
+- Security: JWT authentication with Spring Security
+- API Docs: OpenAPI 3.0 (Swagger UI at /swagger-ui.html)
+
+## Architecture
+```
+src/main/java/com/chessai/tournament/
+├── controller/     # REST API controllers
+├── service/        # Business logic
+├── repository/     # JPA repositories
+├── entity/         # JPA entities
+├── dto/            # Request/Response DTOs
+├── config/         # Spring configurations
+├── security/       # JWT, auth, rate limiting
+└── exception/      # Custom exceptions
+```
+
+## Key Entities
+- **Tournament**: Chess tournament with status lifecycle (DRAFT → REGISTRATION_OPEN → IN_PROGRESS → COMPLETED)
+- **TournamentPlayer**: Participant with score tracking (win=1.0, draw=0.5, loss=0.0)
+- **Game**: Chess game/match with manual result input
+- **TournamentWinner**: Multiple winners support (children tournaments)
+- **User**: Authentication with roles (USER, ADMIN, ORGANIZER)
+
+## Coding Standards
+
+### Java Style
+- Use Lombok annotations (@Data, @Builder, @RequiredArgsConstructor)
+- Use Jakarta Validation (@NotNull, @Min, @Max, @Size)
+- Use SLF4J logging with @Slf4j
+- Follow Google Java Style Guide
+
+### REST API Conventions
+- Base path: /api/tournaments
+- Use OpenAPI annotations (@Operation, @ApiResponse, @Schema)
+- Return ResponseEntity with proper HTTP status codes
+- Use @Valid for request validation
+
+### Database
+- Entity naming: PascalCase (TournamentPlayer)
+- Table naming: snake_case (tournament_players)
+- Use Flyway migrations in src/main/resources/db/migration/
+- Migration naming: V{N}__{description}.sql
+
+### Security
+- JWT tokens for authentication
+- @AuthenticationPrincipal User for current user
+- Check tournament.isOrganizer(userId) for organizer-only operations
+
+## Common Patterns
+
+### Controller Example
+```java
+@PostMapping
+@Operation(summary = "Create resource")
+@ApiResponse(responseCode = "201", description = "Created")
+public ResponseEntity<Response> create(
+        @Valid @RequestBody Request request,
+        @AuthenticationPrincipal User currentUser) {
+    Long userId = currentUser.getId();
+    Response response = service.create(request, userId);
+    return ResponseEntity.status(HttpStatus.CREATED).body(response);
+}
+```
+
+### Service Example
+```java
+@Transactional
+public Response create(Request request, Long currentUserId) {
+    log.info("Creating resource by user {}", currentUserId);
+    
+    // Validate permissions
+    if (!entity.isOrganizer(currentUserId)) {
+        throw new AccessDeniedException("Only organizer allowed");
+    }
+    
+    // Business logic
+    Entity saved = repository.save(entity);
+    return mapToResponse(saved);
+}
+```
+
+### DTO Example
+```java
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Schema(description = "Request description")
+public class Request {
+    @NotNull(message = "Field is required")
+    @Schema(description = "Field description", example = "value")
+    private String field;
+}
+```
+
+## Testing - TDD (Test-Driven Development) ⚠️ ОБЯЗАТЕЛЬНО
+
+### 🔴 ПРАВИЛО: ТЕСТЫ ПИШУТСЯ ПЕРВЫМИ (Test-First)
+При реализации ЛЮБОЙ функциональности:
+1. **СНАЧАЛА** пишутся тесты (Unit + Integration)
+2. **ПОТОМ** реализуется код
+3. **Минимум 100% покрытие тестами** для нового кода
+
+### Порядок разработки (СТРОГО):
+```
+1. Написать Unit-тесты для Service → тесты падают (RED)
+2. Написать Integration-тесты для Controller → тесты падают (RED)
+3. Реализовать код → тесты проходят (GREEN)
+4. Рефакторинг при необходимости (REFACTOR)
+```
+
+### Unit-тесты (обязательно для каждого метода Service):
+```java
+@ExtendWith(MockitoExtension.class)
+class MyServiceTest {
+    @Mock private MyRepository repository;
+    @InjectMocks private MyService service;
+    
+    @Test
+    void shouldDoSomething_whenValidInput() { /* happy path */ }
+    
+    @Test
+    void shouldThrowException_whenInvalidInput() { /* error case */ }
+    
+    @Test
+    void shouldDenyAccess_whenNotOrganizer() { /* auth check */ }
+}
+```
+
+### Integration-тесты (обязательно для каждого endpoint):
+```java
+@WebMvcTest(MyController.class)
+@Import(SecurityConfig.class)
+class MyControllerIntegrationTest {
+    @Autowired private MockMvc mockMvc;
+    @MockBean private MyService service;
+    
+    @Test
+    @WithMockUser
+    void shouldReturn201_whenCreateSuccess() { /* POST test */ }
+    
+    @Test
+    void shouldReturn401_whenUnauthorized() { /* security test */ }
+    
+    @Test
+    @WithMockUser
+    void shouldReturn400_whenValidationFails() { /* validation test */ }
+}
+```
+
+### Минимальные тест-кейсы для каждой функции:
+- ✅ Happy path (успешный сценарий)
+- ✅ Validation errors (ошибки валидации)
+- ✅ Authorization denied (отказ в доступе)
+- ✅ Not found (ресурс не найден)
+- ✅ Business rule violations (нарушение бизнес-правил)
+
+### Запуск тестов:
+- Run: ./gradlew test
+- Coverage report: ./gradlew jacocoTestReport
+- Test config: src/test/resources/application.yml
+
+### Структура тестов:
+```
+src/test/java/com/chessai/tournament/
+├── service/           # Unit-тесты сервисов
+├── controller/        # Integration-тесты контроллеров
+├── repository/        # @DataJpaTest для репозиториев
+└── integration/       # E2E тесты (@SpringBootTest)
+```
+
+### Аннотации для тестов:
+- @ExtendWith(MockitoExtension.class) - unit-тесты
+- @WebMvcTest - controller integration tests
+- @DataJpaTest - repository tests
+- @SpringBootTest - full integration tests
+
+## Running Locally
+1. Start PostgreSQL: docker-compose up -d postgres
+2. Run app: ./gradlew bootRun --args='--spring.profiles.active=dev'
+3. Swagger UI: http://localhost:8080/swagger-ui.html
+
+## JIRA Tickets Reference
+- AI-125: Tournament Management (parent story)
+- AI-132: Initialize Backend ✅
+- AI-390: Domain Model ✅
+- AI-391: REST API ✅
+- AI-392: Security ✅
+
+## MVP Features (Manual Input)
+- Player registration: POST /api/tournaments/{id}/players
+- Game creation: POST /api/tournaments/{id}/games (manual pairing)
+- Result input: PATCH /api/tournaments/{id}/games/{gameId}/result
+- Scoring: win=1, draw=0.5, loss=0
+- Multiple winners: POST /api/tournaments/{id}/games/winners
+- All winners (children): POST /api/tournaments/{id}/games/winners/all
+
+## Do NOT ⛔
+- **Do not write implementation code BEFORE tests** (TDD is mandatory!)
+- **Do not commit code with less than 100% test coverage**
+- Do not skip unit-tests for Service methods
+- Do not skip integration-tests for Controller endpoints
+- Do not use automatic pairing algorithms (MVP is manual)
+- Do not modify Flyway migrations that are already applied
+- Do not expose sensitive data in API responses
+- Do not use deprecated Spring Security methods

@@ -1,0 +1,32 @@
+# -----------------------------------------------------------------------------
+# Kustomization for Tournament Service
+# -----------------------------------------------------------------------------
+# Используйте: kubectl apply -k k8s/
+# -----------------------------------------------------------------------------
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: chessverse-tournament
+
+# Общие labels для всех ресурсов
+commonLabels:
+  app.kubernetes.io/name: tournament-service
+  app.kubernetes.io/part-of: chessverse
+  app.kubernetes.io/managed-by: kustomize
+
+# Ресурсы для деплоя
+resources:
+  - namespace.yaml
+  - serviceaccount.yaml
+  - configmap.yaml
+  - deployment.yaml
+  - service.yaml
+  # Опционально:
+  # - ingress.yaml
+  # - hpa.yaml
+
+# Образы (можно переопределить при деплое)
+images:
+  - name: ghcr.io/aichessinc/tournament-service-be
+    newTag: latest
+

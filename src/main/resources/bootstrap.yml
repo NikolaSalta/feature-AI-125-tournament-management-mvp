@@ -1,0 +1,77 @@
+# =====================================================
+# Bootstrap Configuration
+# =====================================================
+# Загружается ДО application.yml для настройки Vault
+# 
+# Spring Cloud Vault требует bootstrap.yml для загрузки
+# секретов из Vault перед инициализацией приложения.
+# =====================================================
+
+spring:
+  application:
+    name: tournament-service-be
+  
+  # Активные профили (можно переопределить через SPRING_PROFILES_ACTIVE)
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  
+  # =====================================================
+  # HashiCorp Vault Configuration
+  # =====================================================
+  # Vault включается только при активном профиле "vault"
+  # Для локальной разработки без Vault используйте профиль "dev"
+  cloud:
+    vault:
+      # Включить/отключить Vault (true при профиле vault)
+      enabled: ${VAULT_ENABLED:false}
+      
+      # =====================================================
+      # Vault Server Connection
+      # =====================================================
+      host: ${VAULT_HOST:127.0.0.1}
+      port: ${VAULT_PORT:8200}
+      scheme: ${VAULT_SCHEME:http}  # http для dev, https для production
+      
+      # =====================================================
+      # Authentication
+      # =====================================================
+      authentication: TOKEN  # TOKEN, KUBERNETES, AWS_IAM, APPROLE
+      token: ${VAULT_TOKEN:}  # Токен для доступа к Vault
+      
+      # =====================================================
+      # Connection Settings
+      # =====================================================
+      connection-timeout: 5000  # Таймаут подключения (мс)
+      read-timeout: 15000       # Таймаут чтения (мс)
+      
+      # =====================================================
+      # KV (Key-Value) Secret Engine
+      # =====================================================
+      kv:
+        enabled: true
+        backend: secret  # Путь к KV движку в Vault
+        default-context: ${spring.application.name}  # tournament-service-be
+        application-name: ${spring.application.name}
+        profile-separator: /  # Разделитель для профилей
+      
+      # =====================================================
+      # Fail Fast
+      # =====================================================
+      # false = приложение запустится даже если Vault недоступен
+      # true = приложение остановится при ошибке подключения к Vault
+      fail-fast: false
+      
+      # =====================================================
+      # Config Discovery
+      # =====================================================
+      discovery:
+        enabled: false  # Отключаем service discovery через Vault
+
+# =====================================================
+# Логирование для отладки
+# =====================================================
+logging:
+  level:
+    org.springframework.cloud.vault: INFO
+    org.springframework.vault: INFO
+

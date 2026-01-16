@@ -1,0 +1,29 @@
+{
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.compile.nullAnalysis.mode": "automatic",
+  "java.format.settings.url": "https://raw.githubusercontent.com/google/styleguide/gh-pages/eclipse-java-google-style.xml",
+  "java.format.settings.profile": "GoogleStyle",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  "files.exclude": {
+    "**/.gradle": true,
+    "**/build": true,
+    "**/.idea": true,
+    "**/*.iml": true,
+    "**/*.ipr": true,
+    "**/*.iws": true
+  },
+  "search.exclude": {
+    "**/build": true,
+    "**/.gradle": true
+  },
+  "cursor.chat.contextFiles": [
+    ".cursorrules",
+    "README.md",
+    "build.gradle",
+    "src/main/resources/application.yml"
+  ],
+  "cursor.chat.alwaysIncludeRules": true
+}

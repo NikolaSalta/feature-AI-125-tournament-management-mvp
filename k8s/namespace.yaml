@@ -1,0 +1,11 @@
+# -----------------------------------------------------------------------------
+# Namespace for Tournament Service
+# -----------------------------------------------------------------------------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: chessverse-tournament
+  labels:
+    app.kubernetes.io/name: tournament-service
+    app.kubernetes.io/part-of: chessverse
+

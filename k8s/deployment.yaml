@@ -1,0 +1,146 @@
+# -----------------------------------------------------------------------------
+# Deployment for Tournament Service
+# -----------------------------------------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tournament-service
+  namespace: chessverse-tournament
+  labels:
+    app.kubernetes.io/name: tournament-service
+    app.kubernetes.io/part-of: chessverse
+    app.kubernetes.io/version: "1.0.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: tournament-service
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: tournament-service
+        app.kubernetes.io/part-of: chessverse
+      annotations:
+        # Перезапуск при изменении ConfigMap/Secret
+        checksum/config: "{{ include (print $.Template.BasePath \"/configmap.yaml\") . | sha256sum }}"
+    spec:
+      serviceAccountName: tournament-service
+      
+      # Security Context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      
+      containers:
+        - name: tournament-service
+          image: ghcr.io/aichessinc/tournament-service-be:latest
+          imagePullPolicy: Always
+          
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          
+          # Environment from ConfigMap
+          envFrom:
+            - configMapRef:
+                name: tournament-config
+          
+          # Environment from Secrets (via ExternalSecret)
+          env:
+            # JWT Secrets
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: tournament-secrets
+                  key: jwt-secret
+            - name: JWT_ACCESS_EXPIRATION
+              valueFrom:
+                secretKeyRef:
+                  name: tournament-secrets
+                  key: jwt-expiration
+            - name: JWT_REFRESH_EXPIRATION
+              valueFrom:
+                secretKeyRef:
+                  name: tournament-secrets
+                  key: jwt-refresh-expiration
+            
+            # Database Secrets
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: tournament-secrets
+                  key: db-host
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: tournament-secrets
+                  key: db-port
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: tournament-secrets
+                  key: db-name
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: tournament-secrets
+                  key: db-username
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tournament-secrets
+                  key: db-password
+          
+          # Resource Limits
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          
+          # Health Checks
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          
+          # Security Context
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+      
+      # Graceful Shutdown
+      terminationGracePeriodSeconds: 30
+      
+      # Pod Anti-Affinity for HA
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app.kubernetes.io/name: tournament-service
+                topologyKey: kubernetes.io/hostname
+

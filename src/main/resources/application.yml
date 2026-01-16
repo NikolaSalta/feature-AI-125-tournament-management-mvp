@@ -1,0 +1,98 @@
+spring:
+  application:
+    name: tournament-service-be
+  
+  # Active profile (dev, prod, vault)
+  # Для использования Vault: dev,vault или prod,vault
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:dev}
+  
+  datasource:
+    # При использовании Vault, значения будут загружены из secret/tournament-service-be/<profile>
+    url: jdbc:postgresql://${db.host:${DB_HOST:localhost}}:${db.port:${DB_PORT:5432}}/${db.name:${DB_NAME:tournament_db}}
+    username: ${db.username:${DB_USERNAME:tournament_user}}
+    password: ${db.password:${DB_PASSWORD}}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: ${JPA_SHOW_SQL:false}
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    # Основные миграции (всегда применяются)
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 0
+    validate-on-migrate: true
+    clean-disabled: true
+    # Seed data загружаются через callbacks (см. application-dev.yml)
+
+# =====================
+# JWT Configuration
+# =====================
+# SECURITY: JWT_SECRET is REQUIRED - no default value!
+# Application will fail to start without it.
+# Generate secret: openssl rand -base64 32
+#
+# For dev profile: set in application-dev.yml or .env
+# For prod profile: set via environment variable or Vault
+jwt:
+  # Secret key for signing tokens (Base64 encoded, minimum 256 bits for HS256)
+  # NO DEFAULT VALUE - must be provided externally
+  secret: ${JWT_SECRET}
+  # Access token expiration: 30 minutes (in milliseconds)
+  access-token-expiration: ${JWT_ACCESS_EXPIRATION:1800000}
+  # Refresh token expiration: 7 days (in milliseconds)
+  refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+  # Token issuer
+  issuer: tournament-service
+
+# =====================
+# Server Configuration
+# =====================
+server:
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# =====================
+# Logging Configuration
+# =====================
+logging:
+  level:
+    root: INFO
+    com.chessai.tournament: ${LOG_LEVEL:INFO}
+    com.chessai.tournament.security: DEBUG
+    org.springframework.security: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# =====================
+# Actuator Configuration
+# =====================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+
+# =====================
+# OpenAPI/Swagger Configuration
+# =====================
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operationsSorter: method
+    tagsSorter: alpha

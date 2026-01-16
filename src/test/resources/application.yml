@@ -1,0 +1,80 @@
+# =====================================================
+# Test Configuration (overrides main application.yml)
+# =====================================================
+# Этот файл загружается вместо основного application.yml для тестов
+
+spring:
+  application:
+    name: tournament-service-be-test
+
+  # ВАЖНО: Отключаем Vault для тестов
+  config:
+    import: ""
+
+  # Отключаем Spring Cloud полностью
+  cloud:
+    compatibility-verifier:
+      enabled: false
+    vault:
+      enabled: false
+      fail-fast: false
+
+  # Профиль по умолчанию для тестов
+  profiles:
+    active: test
+
+  # H2 in-memory database
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
+    open-in-view: false
+
+  # Отключаем Flyway
+  flyway:
+    enabled: false
+
+# =====================
+# JWT Configuration (тестовые значения)
+# =====================
+jwt:
+  secret: dGVzdC1zZWNyZXQta2V5LWZvci1qd3QtdG9rZW5zLTI1NmJpdHMtdGVzdGluZw==
+  access-token-expiration: 1800000
+  refresh-token-expiration: 604800000
+  issuer: tournament-service-test
+
+# =====================
+# Server Configuration
+# =====================
+server:
+  port: 0
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# =====================
+# Logging
+# =====================
+logging:
+  level:
+    root: WARN
+    com.chessai.tournament: INFO
+    org.springframework.security: WARN
+    org.springframework.cloud.vault: OFF
+
+# =====================
+# Actuator
+# =====================
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+

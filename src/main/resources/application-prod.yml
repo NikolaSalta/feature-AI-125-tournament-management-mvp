@@ -1,0 +1,92 @@
+# =====================================================
+# Production Profile Configuration
+# =====================================================
+# Активируется с: --spring.profiles.active=prod или SPRING_PROFILES_ACTIVE=prod
+#
+# ОБЯЗАТЕЛЬНЫЕ переменные окружения:
+# - DB_HOST, DB_PORT, DB_NAME, DB_USERNAME, DB_PASSWORD
+# - JWT_SECRET (openssl rand -base64 32)
+# 
+# Опциональные (для Vault):
+# - VAULT_ENABLED=true
+# - VAULT_HOST, VAULT_PORT, VAULT_TOKEN
+# =====================================================
+
+spring:
+  # Production datasource - ВСЕ значения из переменных окружения
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_NAME}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT:30000}
+      idle-timeout: ${DB_IDLE_TIMEOUT:600000}
+      max-lifetime: ${DB_MAX_LIFETIME:1800000}
+  
+  jpa:
+    show-sql: false
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+  
+  # Flyway - без seed data в production
+  flyway:
+    locations: classpath:db/migration
+    # НЕ включаем db/seed в production!
+    placeholders:
+      seedData: "false"
+
+# JWT - обязательно из переменных окружения
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: ${JWT_ACCESS_EXPIRATION:1800000}
+  refresh-token-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+# Server
+server:
+  port: ${SERVER_PORT:8080}
+  tomcat:
+    max-threads: ${SERVER_MAX_THREADS:200}
+    min-spare-threads: ${SERVER_MIN_THREADS:20}
+
+# Минимальное логирование в production
+logging:
+  level:
+    root: WARN
+    com.chessai.tournament: INFO
+    com.chessai.tournament.security: WARN # Строгое логирование безопасности
+    com.chessai.tournament.security.ratelimit: INFO # Rate limit события
+    org.springframework.security: WARN
+    org.springframework.security.access: INFO # Логируем попытки несанкционированного доступа
+    org.hibernate: WARN
+    org.springframework.orm: WARN # Optimistic locking failures
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+  # В Docker логи идут в stdout/stderr, file logging отключен
+
+# Actuator - только health и info
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: when_authorized
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+
+

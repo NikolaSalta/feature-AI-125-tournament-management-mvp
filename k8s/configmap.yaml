@@ -1,0 +1,33 @@
+# -----------------------------------------------------------------------------
+# ConfigMap for Tournament Service
+# -----------------------------------------------------------------------------
+# Non-sensitive configuration values
+# -----------------------------------------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: tournament-config
+  namespace: chessverse-tournament
+  labels:
+    app.kubernetes.io/name: tournament-service
+    app.kubernetes.io/part-of: chessverse
+data:
+  # Spring Profiles
+  SPRING_PROFILES_ACTIVE: "prod,vault"
+  
+  # Server Configuration
+  SERVER_PORT: "8080"
+  
+  # Vault Configuration
+  VAULT_ENABLED: "true"
+  VAULT_HOST: "vault.vault.svc"
+  VAULT_PORT: "8200"
+  VAULT_SCHEME: "http"
+  
+  # Logging
+  LOGGING_LEVEL_ROOT: "INFO"
+  LOGGING_LEVEL_COM_CHESSAI: "DEBUG"
+  
+  # JVM Options
+  JAVA_OPTS: "-Xmx512m -Xms256m -XX:+UseG1GC -XX:MaxGCPauseMillis=100"
+
